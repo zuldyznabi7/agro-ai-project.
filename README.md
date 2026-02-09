@@ -1,2 +1,21 @@
-# agro-ai-project.
-Next-gen Agricultural Monitoring OS. AI-powered satellite analysis, drone fleet management, and real-time NDVI tracking for Kazakhstan agro-sector.
+# 🛰️ AgroAI ULTRA PRO v9.0 (GOD MODE)
+
+![Status](https://img.shields.io/badge/Status-Live-neon-cyan) 
+![Sector](https://img.shields.io/badge/Sector-Agriculture-green)
+
+**AgroAI OS** — это футуристическая операционная система для управления агропромышленными комплексами. Система объединяет спутниковый мониторинг, нейросетевую аналитику и управление дронами в едином интерфейсе.
+
+## 🚀 Основные возможности
+* **Satellite Live Stream:** Интерактивная карта полей Казахстана (Esri World Imagery).
+* **AI Neural Net:** Адаптивный ИИ-советник для принятия решений по поливу и удобрениям.
+* **Drone Fleet Control:** Визуализация статуса и телеметрии автономных агродронов.
+* **NDVI Tracking:** Живой мониторинг индекса вегетации растений.
+
+## 🛠 Стек технологий
+* **Frontend:** HTML5, CSS3 (Glassmorphism), JavaScript (ES6+).
+* **Maps:** Leaflet.js + Esri Satellite.
+* **Charts:** Chart.js (Real-time telemetry).
+* **Animations:** Anime.js + CSS Keyframes.
+
+## 💻 Установка
+Проект работает как Single Page Application (SPA). Просто откройте `index.html` в любом современном браузере.
