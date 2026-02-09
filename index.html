@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroAI ULTRA PRO | Satellite System</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #050b14;
+            --panel: rgba(13, 22, 35, 0.85);
+            --border: 1px solid rgba(255, 255, 255, 0.1);
+            --neon-blue: #00f2ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff3366;
+            --text-main: #e0e6ed;
+            --text-muted: #94a3b8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            background-image: radial-gradient(circle at top, #1a2c4e 0%, #050b14 60%);
+        }
+
+        /* --- Utility --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; align-items: center; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-red { background: rgba(255, 51, 102, 0.2); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .badge-green { background: rgba(0, 255, 136, 0.2); color: var(--neon-green); border: 1px solid var(--neon-green); }
+
+        /* --- Login Screen --- */
+        #login-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            background-image: url('https://images.unsplash.com/photo-1625246333195-5819acf42f1c?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;
+        }
+        
+        .login-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(5, 11, 20, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        .login-box {
+            position: relative;
+            background: rgba(13, 22, 35, 0.9);
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            text-align: center;
+            width: 350px;
+        }
+
+        .login-box h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 32px;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #fff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 6px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .login-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+
+        .btn-main {
+            width: 100%;
+            padding: 12px;
+            background: var(--neon-blue);
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 0 15px rgba(0,242,255,0.5); }
+
+        /* --- App Layout --- */
+        #app-system {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+        }
+
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            background: rgba(5, 11, 20, 0.9);
+            border-bottom: var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .logo { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; }
+        .logo i { color: var(--neon-blue); }
+
+        .lang-select {
+            background: #1e293b; color: white; border: var(--border);
+            padding: 5px 15px; border-radius: 20px; cursor: pointer; outline: none;
+        }
+
+        /* Sidebar */
+        aside {
+            background: rgba(8, 14, 26, 0.95);
+            border-right: var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--neon-blue);
+            border-left: 3px solid var(--neon-blue);
+        }
+
+        /* Main Content */
+        main {
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .page-content { animation: fadeIn 0.5s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards */
+        .card {
+            background: var(--panel);
+            border: var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        h2, h3 { font-family: 'Rajdhani', sans-serif; margin-bottom: 15px; color: white; }
+
+        /* Map */
+        #map-container { position: relative; height: 400px; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+        #map { width: 100%; height: 100%; }
+
+        /* Weather Widget */
+        .weather-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        .weather-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center; }
+        .weather-card i { font-size: 24px; margin-bottom: 10px; color: var(--neon-blue); }
+
+        /* Chat UI */
+        .chat-box { height: 300px; overflow-y: auto; border: 1px solid #334155; background: #0b121f; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .msg { margin-bottom: 10px; padding: 10px; border-radius: 8px; max-width: 80%; }
+        .msg.ai { background: rgba(0, 242, 255, 0.15); color: var(--neon-blue); align-self: flex-start; border-left: 2px solid var(--neon-blue); }
+        .msg.user { background: #334155; color: white; margin-left: auto; text-align: right; }
+        
+        .chat-input-area { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 10px; background: #1e293b; border: 1px solid #334155; color: white; border-radius: 6px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; color: var(--text-muted); padding: 10px; border-bottom: 1px solid #334155; }
+        td { padding: 12px 10px; border-bottom: 1px solid #1e293b; color: white; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-overlay"></div>
+        <div class="login-box">
+            <h1>AgroAI <span style="color:var(--neon-green)">ULTRA</span></h1>
+            <p style="color:#94a3b8; margin-bottom:20px;">Secure Satellite Access</p>
+            <input type="text" class="login-input" placeholder="ID / Login" value="admin">
+            <input type="password" class="login-input" placeholder="Password" value="1234">
+            <button class="btn-main" onclick="performLogin()">Connect System</button>
+        </div>
+    </div>
+
+    <div id="app-system" class="hidden">
+        
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-satellite-dish"></i>
+                AgroAI ULTRA PRO
+            </div>
+            <div class="flex" style="gap:20px;">
+                <div style="font-size:12px; color:var(--text-muted);">
+                    <i class="fa-solid fa-location-arrow"></i> Kyzylorda, KZ (Live)
+                </div>
+                <select class="lang-select" onchange="switchLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="ru" selected>Русский</option>
+                    <option value="kz">Қазақша</option>
+                </select>
+                <div style="width:35px; height:35px; background:var(--neon-blue); border-radius:50%; display:flex; justify-content:center; align-items:center; color:black; font-weight:bold;">
+                    A
+                </div>
+            </div>
+        </header>
+
+        <aside>
+            <div class="nav-item active" onclick="navigate('dashboard')">
+                <i class="fa-solid fa-chart-pie"></i> <span data-key="menu_dash">Dashboard</span>
+            </div>
+            <div class="nav-item" onclick="navigate('fields')">
+                <i class="fa-solid fa-map"></i> <span data-key="menu_fields">Мои Поля</span>
+            </div>
+            <div class="nav-item" onclick="navigate('weather')">
+                <i class="fa-solid fa-cloud-sun-rain"></i> <span data-key="menu_weather">Погода AI</span>
+            </div>
+            <div class="nav-item" onclick="navigate('ai')">
+                <i class="fa-solid fa-robot"></i> <span data-key="menu_ai">AI Советник</span>
+            </div>
+            <div class="nav-item" onclick="navigate('settings')">
+                <i class="fa-solid fa-sliders"></i> <span data-key="menu_settings">Настройки</span>
+            </div>
+        </aside>
+
+        <main>
+
+            <div id="view-dashboard" class="page-content">
+                <div class="card">
+                    <div class="flex" style="justify-content:space-between; margin-bottom:10px;">
+                        <h3 data-key="title_map">Спутниковый мониторинг (NDVI)</h3>
+                        <span class="badge badge-green">LIVE SATELLITE</span>
+                    </div>
+                    <div id="map-container">
+                        <div id="map"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 data-key="title_stats">Динамика вегетации</h3>
+                    <div style="height:250px;">
+                        <canvas id="ndviChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-fields" class="page-content hidden">
+                <div class="card">
+                    <h2 data-key="menu_fields">Статус полей</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-key="th_region">Регион</th>
+                                <th data-key="th_crop">Культура</th>
+                                <th data-key="th_health">Здоровье (NDVI)</th>
+                                <th data-key="th_status">Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Кызылорда, Сектор 4</td>
+                                <td>Рис (Rice)</td>
+                                <td>0.45 (Низкий)</td>
+                                <td><span class="badge badge-red" data-key="status_drought">ЗАСУХА</span></td>
+                            </tr>
+                            <tr>
+                                <td>Костанай, Сектор 1</td>
+                                <td>Пшеница</td>
+                                <td>0.82 (Отлично)</td>
+                                <td><span class="badge badge-green" data-key="status_ok">НОРМА</span></td>
+                            </tr>
+                            <tr>
+                                <td>Шымкент, Сектор 7</td>
+                                <td>Хлопок</td>
+                                <td>0.65 (Средне)</td>
+                                <td><span class="badge" style="background:#ffd700; color:black;">ВНИМАНИЕ</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-weather" class="page-content hidden">
+                <div class="card">
+                    <h2 data-key="title_weather">AI Прогноз погоды</h2>
+                    <div style="margin-bottom:20px; font-size:48px; font-weight:bold; color:var(--text-main);">
+                        +32°C <span style="font-size:18px; color:var(--text-muted); vertical-align:middle;">Kyzylorda, KZ</span>
+                    </div>
+                    
+                    <div class="weather-grid">
+                        <div class="weather-card">
+                            <i class="fa-solid fa-wind"></i>
+                            <div>12 km/h</div>
+                            <div style="font-size:12px; color:#aaa;">Ветер</div>
+                        </div>
+                        <div class="weather-card">
+                            <i class="fa-solid fa-droplet"></i>
+                            <div>18%</div>
+                            <div style="font-size:12px; color:#aaa;">Влажность</div>
+                        </div>
+                        <div class="weather-card">
+                            <i class="fa-solid fa-sun"></i>
+                            <div>High UV</div>
+                            <div style="font-size:12px; color:#aaa;">Индекс</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-ai" class="page-content hidden">
+                <div class="card">
+                    <h2 data-key="menu_ai">AI Агро-Советник</h2>
+                    <div class="chat-box" id="chat-history">
+                        <div class="msg ai">
+                            <i class="fa-solid fa-robot"></i> Здравствуйте! Я проанализировал ваши поля. В секторе "Кызылорда" критическая нехватка влаги. Рекомендую начать полив сегодня вечером.
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="user-input" class="chat-input" placeholder="Задайте вопрос AI...">
+                        <button class="btn-main" style="width:auto; margin:0;" onclick="sendMessage()">SEND</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="page-content hidden">
+                <div class="card">
+                    <h2 data-key="menu_settings">Настройки системы</h2>
+                    <p>System Version: v2.4.0 (Ultra)</p>
+                    <p>User Role: Administrator</p>
+                    <br>
+                    <button class="btn-main" style="background:var(--neon-red);" onclick="location.reload()">LOGOUT</button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Translations Dictionary ---
+        const dictionary = {
+            ru: {
+                menu_dash: "Обзор (Dashboard)",
+                menu_fields: "Мои Поля",
+                menu_weather: "Погода AI",
+                menu_ai: "AI Советник",
+                menu_settings: "Настройки",
+                title_map: "Спутниковый мониторинг",
+                title_stats: "Динамика вегетации",
+                th_region: "Регион",
+                th_crop: "Культура",
+                th_health: "Здоровье (NDVI)",
+                th_status: "Статус",
+                status_drought: "ЗАСУХА",
+                status_ok: "НОРМА",
+                title_weather: "AI Прогноз"
+            },
+            en: {
+                menu_dash: "Dashboard",
+                menu_fields: "My Fields",
+                menu_weather: "Weather AI",
+                menu_ai: "AI Advisor",
+                menu_settings: "Settings",
+                title_map: "Satellite Monitoring",
+                title_stats: "Vegetation Dynamics",
+                th_region: "Region",
+                th_crop: "Crop",
+                th_health: "Health (NDVI)",
+                th_status: "Status",
+                status_drought: "DROUGHT",
+                status_ok: "HEALTHY",
+                title_weather: "AI Forecast"
+            },
+            kz: {
+                menu_dash: "Шолу (Dashboard)",
+                menu_fields: "Егістіктерім",
+                menu_weather: "Ауа райы AI",
+                menu_ai: "AI Кеңесші",
+                menu_settings: "Баптаулар",
+                title_map: "Спутниктік бақылау",
+                title_stats: "Вегетация динамикасы",
+                th_region: "Аймақ",
+                th_crop: "Дақыл",
+                th_health: "Денсаулық (NDVI)",
+                th_status: "Мәртебе",
+                status_drought: "ҚҰРҒАҚШЫЛЫҚ",
+                status_ok: "ҚАЛЫПТЫ",
+                title_weather: "AI Болжамы"
+            }
+        };
+
+        let currentLang = 'ru';
+        let mapInstance = null;
+
+        // --- Core Functions ---
+
+        function performLogin() {
+            // Fake loading effect
+            const btn = document.querySelector('.btn-main');
+            const originalText = btn.innerText;
+            btn.innerText = "AUTHENTICATING...";
+            btn.style.opacity = 0.7;
+
+            setTimeout(() => {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-system').classList.remove('hidden');
+                
+                // Initialize components after login
+                initMap();
+                initChart();
+            }, 1000);
+        }
+
+        function navigate(viewId) {
+            // 1. Update Sidebar UI
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            // Find the clicked item (approximate matching for demo)
+            event.currentTarget.classList.add('active');
+
+            // 2. Switch Views
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+
+            // 3. Fix Map Resize Issue
+            if (viewId === 'dashboard' && mapInstance) {
+                setTimeout(() => { mapInstance.invalidateSize(); }, 100);
+            }
+        }
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (dictionary[lang][key]) {
+                    el.innerText = dictionary[lang][key];
+                }
+            });
+        }
+
+        // --- Feature Initialization ---
+
+        function initMap() {
+            if(mapInstance) return;
+
+            // Map centered on Kazakhstan
+            mapInstance = L.map('map').setView([48.0196, 66.9237], 5);
+
+            // SATELLITE TILE LAYER (Esri World Imagery) - Professional Look
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri'
+            }).addTo(mapInstance);
+
+            // Custom Markers
+            const dangerIcon = L.divIcon({
+                className: 'custom-pin',
+                html: '<div style="background:#ff3366; width:15px; height:15px; border-radius:50%; box-shadow:0 0 10px #ff3366; border:2px solid white;"></div>'
+            });
+
+            const safeIcon = L.divIcon({
+                className: 'custom-pin',
+                html: '<div style="background:#00ff88; width:15px; height:15px; border-radius:50%; box-shadow:0 0 10px #00ff88; border:2px solid white;"></div>'
+            });
+
+            L.marker([44.8488, 65.4823], {icon: dangerIcon}).addTo(mapInstance).bindPopup("<b>Kyzylorda:</b> Critical Drought Risk");
+            L.marker([53.2198, 63.6354], {icon: safeIcon}).addTo(mapInstance).bindPopup("<b>Kostanay:</b> Healthy Wheat");
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('ndviChart').getContext('2d');
+            
+            // Gradient Fill
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 242, 255, 0.5)');
+            gradient.addColorStop(1, 'rgba(0, 242, 255, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    datasets: [{
+                        label: 'Average Field Health (NDVI)',
+                        data: [0.3, 0.35, 0.45, 0.6, 0.75, 0.8, 0.72],
+                        borderColor: '#00f2ff',
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    scales: {
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- AI Chat Logic ---
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const chatBox = document.getElementById('chat-history');
+            const text = input.value;
+
+            if(!text) return;
+
+            // Add User Message
+            const userDiv = document.createElement('div');
+            userDiv.className = 'msg user';
+            userDiv.innerText = text;
+            chatBox.appendChild(userDiv);
+            
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Simulate AI Response
+            setTimeout(() => {
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'msg ai';
+                aiDiv.innerHTML = '<i class="fa-solid fa-robot"></i> Analyzing... Based on satellite data, yield prediction is stable at 3.5 tons/ha. Keep monitoring humidity.';
+                chatBox.appendChild(aiDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+        }
+
+    </script>
+</body>
+</html>
